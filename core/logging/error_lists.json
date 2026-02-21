@@ -1,4 +1,193 @@
 {
-    "httpfailError":{"id":404,"rank":"ROLLBACK"}
+  "version": "2.0",
+  "last_updated": "2026-02-21",
+  "description": "智创未来AI智能体大赛 - 工作流引擎错误码表",
+  
+  "categories": {
+    "FATAL": {
+      "code_range": "1xxx",
+      "name": "致命错误",
+      "description": "导致程序无法继续运行的严重错误",
+      "action": "exit",
+      "recoverable": false
+    },
+    "CRITICAL": {
+      "code_range": "2xxx",
+      "name": "严重错误",
+      "description": "影响核心功能但程序可继续运行",
+      "action": "prompt",
+      "recoverable": false
+    },
+    "ERROR": {
+      "code_range": "3xxx",
+      "name": "一般错误",
+      "description": "某个操作失败但不影响整体",
+      "action": "prompt",
+      "recoverable": true
+    },
+    "RETRY": {
+      "code_range": "4xxx",
+      "name": "可重试错误",
+      "description": "网络超时等可自动重试的错误",
+      "action": "retry",
+      "recoverable": true,
+      "max_retries": 3,
+      "retry_delay": 1.0
+    },
+    "WARN": {
+      "code_range": "5xxx",
+      "name": "警告",
+      "description": "有问题但不影响执行",
+      "action": "ignore",
+      "recoverable": true
+    },
+    "INFO": {
+      "code_range": "6xxx",
+      "name": "提示信息",
+      "description": "普通提示信息",
+      "action": "ignore",
+      "recoverable": true
+    },
+    "DEBUG": {
+      "code_range": "7xxx",
+      "name": "调试信息",
+      "description": "开发调试用信息",
+      "action": "ignore",
+      "recoverable": true
+    },
+    "IGNORE": {
+      "code_range": "8xxx",
+      "name": "可忽略错误",
+      "description": "用户误触等不影响后续操作的错误",
+      "action": "ignore",
+      "recoverable": true
+    }
+  },
+  
+  "errors": {
+    "1001": {
+      "category": "FATAL",
+      "message": "配置文件不存在: {path}",
+      "suggestion": "请检查配置文件路径是否正确，或重新安装程序",
+      "details": {
+        "windows_solution": "检查 C:\\Users\\[用户名]\\AppData\\Roaming\\WorkflowEngine\\config 目录",
+        "mac_solution": "检查 ~/Library/Preferences/WorkflowEngine 目录",
+        "linux_solution": "检查 ~/.config/workflow-engine 目录"
+      }
+    },
+    "1002": {
+      "category": "FATAL",
+      "message": "端口 {port} 已被占用",
+      "suggestion": "请修改端口配置或关闭占用该端口的程序",
+      "details": {
+        "check_command": "netstat -ano | findstr :{port}" 
+      }
+    },
+    "2001": {
+      "category": "CRITICAL",
+      "message": "API密钥格式错误: {key_name}",
+      "suggestion": "请检查API密钥格式是否符合要求，密钥长度应为{expected_length}位",
+      "recoverable": false
+    },
+    "2002": {
+      "category": "CRITICAL",
+      "message": "数据库连接失败: {db_path}",
+      "suggestion": "请检查数据库文件是否存在，或重新初始化数据库",
+      "details": {
+        "init_command": "python init_db.py"
+      }
+    },
+    "3001": {
+      "category": "ERROR",
+      "message": "技能 {skill_name} 执行超时",
+      "suggestion": "请检查该技能的实现，或增加超时设置",
+      "timeout": 30
+    },
+    "3002": {
+      "category": "ERROR",
+      "message": "工作流解析失败: {workflow_id}",
+      "suggestion": "请检查工作流格式是否符合Skill Protocol规范",
+      "details": {
+        "protocol_version": "1.0",
+        "validation_tool": "utils/json_validator.py"
+      }
+    },
+    "4001": {
+      "category": "RETRY",
+      "message": "网络连接失败: {url}",
+      "suggestion": "请检查网络连接，正在自动重试...",
+      "max_retries": 3,
+      "retry_delay": 2.0
+    },
+    "4002": {
+      "category": "RETRY",
+      "message": "HTTP请求超时: {url}",
+      "suggestion": "服务器响应慢，正在重试...",
+      "max_retries": 2,
+      "retry_delay": 3.0
+    },
+    "5001": {
+      "category": "WARN",
+      "message": "技能 {skill_name} 未注册",
+      "suggestion": "请在技能中心注册该技能，或检查技能名称",
+      "details": {
+        "register_api": "/api/skills/register"
+      }
+    },
+    "5002": {
+      "category": "WARN",
+      "message": "工作流节点 {node_id} 返回空结果",
+      "suggestion": "检查该节点的输入参数是否正确"
+    },
+    "6001": {
+      "category": "INFO",
+      "message": "工作流 {workflow_id} 执行完成",
+      "details": {
+        "execution_time": "{time}ms",
+        "nodes_executed": "{node_count}"
+      }
+    },
+    "6002": {
+      "category": "INFO",
+      "message": "技能 {skill_name} 注册成功",
+      "suggestion": "现在可以在工作流中使用该技能"
+    },
+    "7001": {
+      "category": "DEBUG",
+      "message": "解析用户输入: {user_input}",
+      "details": {
+        "tokens": "{token_count}",
+        "intent": "{intent}"
+      }
+    },
+    "8001": {
+      "category": "IGNORE",
+      "message": "用户点击了未授权按钮: {button_id}",
+      "suggestion": "此操作无影响，可继续正常使用"
+    },
+    "8002": {
+      "category": "IGNORE",
+      "message": "输入字段 {field_name} 格式不匹配，已自动修正",
+      "suggestion": "系统已自动处理，无需担心"
+    }
+  },
+  
+  "platform_specific": {
+    "windows": {
+      "path_separator": "\\",
+      "default_log_dir": "%APPDATA%\\WorkflowEngine\\logs",
+      "color_support": true
+    },
+    "darwin": {
+      "path_separator": "/",
+      "default_log_dir": "~/Library/Logs/WorkflowEngine",
+      "color_support": true
+    },
+    "linux": {
+      "path_separator": "/",
+      "default_log_dir": "~/.local/share/workflow-engine/logs",
+      "color_support": true
+    }
+  }
 }
 
