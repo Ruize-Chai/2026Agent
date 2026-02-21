@@ -2,14 +2,11 @@ from notes import note
 from typing import Any,Dict,List
 
 def work_flow_list(work_flow:List):
-
     res = []
     for notes in work_flow:
         notes_object = None#
         res.append(notes_object)
         pass
-    
-
     return res
 
 def work_flow_context(work_flow:List):
