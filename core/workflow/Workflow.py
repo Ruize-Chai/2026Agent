@@ -15,10 +15,9 @@ class Workflow:
         }
         self._skills: List[Skill] | None = None
         self._skill_map: Dict[int, Skill] | None = None
-        
-
     
-    def _validate_workflow(self, data: Dict[str, Any]) -> None:
+    @staticmethod
+    def _validate_workflow(data: Dict[str, Any]) -> None:
         #合法性检查
         for key in ("workflow_id", "entry", "nodes"):
             if key not in data:
