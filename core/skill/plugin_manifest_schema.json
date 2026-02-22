@@ -1,0 +1,42 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "https://example.com/schemas/skill_node_schema.json",
+	"title": "Skill Node Schema",
+	"type": "object",
+	"required": ["type", "inputs", "outputs", "params"],
+	"additionalProperties": false,
+	"properties": {
+		"type": {
+			"type": "string",
+			"description": "Node type id"
+		},
+		"inputs": {
+			"type": "array",
+			"items": { "type": "integer" },
+			"uniqueItems": true,
+			"description": "Allowed incoming node ids"
+		},
+		"outputs": {
+			"type": "array",
+			"items": { "type": ["integer", "null"] },
+			"uniqueItems": true,
+			"description": "Outgoing node ids, null means end"
+		},
+		"params": {
+			"type": "object",
+			"description": "Skill params with optional context placement",
+			"additionalProperties": true,
+			"properties": {
+				"context_slot": {
+					"type": "string",
+					"description": "Context write location key"
+				},
+				"config_options": {
+					"type": "array",
+					"items": {},
+					"description": "Optional list of config options"
+				}
+			}
+		}
+	}
+}

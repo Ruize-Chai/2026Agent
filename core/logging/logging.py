@@ -99,9 +99,9 @@ class ColorFormatter:
     
     def __init__(self):
         self.system = platform.system()
-        self.is_windows = self.system == "Windows"
-        self.is_mac = self.system == "Darwin"
-        self.is_linux = self.system == "Linux"
+        self.is_windows = (self.system == "Windows")
+        self.is_mac = (self.system == "Darwin")
+        self.is_linux = (self.system == "Linux")
         self.supports_color = self._check_color_support()
         
         if self.is_windows:
