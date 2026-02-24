@@ -8,12 +8,13 @@ from pydantic import BaseModel, Field
 from Front.login import verify_login
 from Front.register import read_user_table, write_user_table
 
-#####PATHS########
+#####HTML PATHS########
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONT_DIR = os.path.join(PROJECT_DIR, "Front")
+WELCOME_HTML_PATH = os.path.join(FRONT_DIR, "welcome.html")
 REGISTER_HTML_PATH = os.path.join(FRONT_DIR, "register.html")
 LOGIN_HTML_PATH = os.path.join(FRONT_DIR, "login.html")
-#####PATHS########
+#####HTML PATHS########
 
 #####PAYLOADS######
 class RegisterPayload(BaseModel):
@@ -35,8 +36,13 @@ def hash_value(value: str) -> str:
 def create_app() -> FastAPI:
     app = FastAPI()
     
-	#GET主页面 （暂时为注册页)
+    #GET主页面
     @app.get("/")
+    async def welcome_page() -> FileResponse:
+        return FileResponse(WELCOME_HTML_PATH)
+
+    #GET注册页面
+    @app.get("/register")
     async def register_page() -> FileResponse:
         return FileResponse(REGISTER_HTML_PATH)
     

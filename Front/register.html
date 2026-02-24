@@ -37,11 +37,13 @@
     const usernameInput = document.querySelector("#username");
     const passwordInput = document.querySelector("#password");
     const confirmInput = document.querySelector("#confirm-password");
+    /*设置消息*/
 
     const setMessage = (text, type = "") => {
         messageBox.textContent = text;
         messageBox.dataset.type = type;
     };
+    /*检查表格*/
 
     const validateForm = () => {
         const username = usernameInput.value.trim();
@@ -72,7 +74,7 @@
 
         return { username, password };
     };
-
+    /*提交POST*/
     const submitForm = async () => {
         const payload = validateForm();
         if (!payload) {
@@ -103,13 +105,16 @@
             setMessage("registration success", "success");
             passwordInput.value = "";
             confirmInput.value = "";
+            setTimeout(() => {
+                window.location.href = "/login";
+            }, 800);
         } catch (error) {
             setMessage("network error", "error");
         } finally {
             confirmButton.disabled = false;
         }
     };
-
+    //自动换行
     inputs.forEach((input, index) => {
         input.addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
@@ -142,7 +147,7 @@
         });
     });
 
-    confirmButton.addEventListener("click", submitForm);
+    confirmButton.addEventListener("click", submitForm);//触发交表
 </script>
 
 <style>
