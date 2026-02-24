@@ -99,9 +99,9 @@ class ColorFormatter:
     
     def __init__(self):
         self.system = platform.system()
-        self.is_windows = (self.system == "Windows")
-        self.is_mac = (self.system == "Darwin")
-        self.is_linux = (self.system == "Linux")
+        self.is_windows = self.system == "Windows"
+        self.is_mac = self.system == "Darwin"
+        self.is_linux = self.system == "Linux"
         self.supports_color = self._check_color_support()
         
         if self.is_windows:
@@ -127,7 +127,7 @@ class ColorFormatter:
         """初始化Windows控制台以支持颜色"""
         try:
             import ctypes
-            kernel32 = ctypes.windll.kernel32#type:ignore
+            kernel32 = ctypes.windll.kernel32
             hStdout = kernel32.GetStdHandle(-11)
             mode = ctypes.c_ulong()
             kernel32.GetConsoleMode(hStdout, ctypes.byref(mode))
@@ -157,7 +157,7 @@ class ColorFormatter:
         return color_map.get(level, "white")
 
 
-# ==================== 自定义错误类 ====================
+# ==================== 自定义错误类（根据todolist.md修改）====================
 
 class ErrorAction(Enum):
     """错误处理动作"""
@@ -200,8 +200,174 @@ class WorkflowError(Exception):
             "details": self.details
         }
 
-# 便捷错误类
+
+# ==================== JSON工具相关错误（根据todolist.md）====================
+
+class JSONSkillFormatError(WorkflowError):
+    """JSON技能格式错误 - [ERROR]JSON_skill_format_Error"""
+    def __init__(self, message: str, file_path: Optional[str] = None, **kwargs):
+        details = kwargs.get("details", {})
+        if file_path:
+            details["file_path"] = file_path
+        super().__init__(
+            code="3101",  # 3xxx 表示ERROR级别
+            message=f"技能JSON格式错误: {message}",
+            level="ERROR",
+            action=ErrorAction.PROMPT_RETRY,
+            suggestion="请检查技能配置文件格式是否符合规范",
+            recoverable=True,
+            details=details,
+            **kwargs
+        )
+
+class JSONWorkflowFormatError(WorkflowError):
+    """工作流JSON格式错误 - [ERROR]JSON_workflow_format_Error"""
+    def __init__(self, message: str, workflow_id: Optional[str] = None, **kwargs):
+        details = kwargs.get("details", {})
+        if workflow_id:
+            details["workflow_id"] = workflow_id
+        super().__init__(
+            code="3102",
+            message=f"工作流JSON格式错误: {message}",
+            level="ERROR",
+            action=ErrorAction.PROMPT_RETRY,
+            suggestion="请检查工作流文件格式是否符合Skill Protocol规范",
+            recoverable=True,
+            details=details,
+            **kwargs
+        )
+
+class JSONWritePathError(WorkflowError):
+    """JSON写入路径错误 - [CRITICAL]JSON_write_path_Error"""
+    def __init__(self, message: str, path: str, **kwargs):
+        details = kwargs.get("details", {})
+        details["path"] = path
+        super().__init__(
+            code="2101",  # 2xxx 表示CRITICAL级别
+            message=f"JSON文件路径错误: {message}",
+            level="CRITICAL",
+            action=ErrorAction.PROMPT_RETRY,
+            suggestion=f"请在对应位置重建JSON文件: {path}",
+            recoverable=False,
+            details=details,
+            **kwargs
+        )
+
+
+# ==================== 插件/技能模块相关错误（根据todolist.md）====================
+
+class PluginModuleNotFoundError(WorkflowError):
+    """插件模块未找到 - [CRITICAL]PLUGINS_module_NotFound_Error"""
+    def __init__(self, module_name: str, **kwargs):
+        details = kwargs.get("details", {})
+        details["module_name"] = module_name
+        super().__init__(
+            code="2201",
+            message=f"插件模块未找到: {module_name}",
+            level="CRITICAL",
+            action=ErrorAction.PROMPT_RETRY,
+            suggestion="工作流/插件已损坏，请重新安装",
+            recoverable=False,
+            details=details,
+            **kwargs
+        )
+
+class PluginAttributeNotFoundError(WorkflowError):
+    """插件属性未找到 - [CRITICAL]PLUGINS_attribute_NotFound_Error"""
+    def __init__(self, module_name: str, attribute_name: str, **kwargs):
+        details = kwargs.get("details", {})
+        details["module_name"] = module_name
+        details["attribute_name"] = attribute_name
+        super().__init__(
+            code="2202",
+            message=f"插件属性未找到: {module_name}.{attribute_name}",
+            level="CRITICAL",
+            action=ErrorAction.PROMPT_RETRY,
+            suggestion="工作流/插件已损坏，请重新安装",
+            recoverable=False,
+            details=details,
+            **kwargs
+        )
+
+class SkillParamTypeError(WorkflowError):
+    """技能参数类型错误 - [ERROR]Skill_param_type_Error"""
+    def __init__(self, skill_name: str, param_name: str, expected_type: str, actual_type: str, **kwargs):
+        details = kwargs.get("details", {})
+        details["skill_name"] = skill_name
+        details["param_name"] = param_name
+        details["expected_type"] = expected_type
+        details["actual_type"] = actual_type
+        super().__init__(
+            code="3201",
+            message=f"技能 '{skill_name}' 参数类型错误: {param_name} 应为 {expected_type}，实际为 {actual_type}",
+            level="ERROR",
+            action=ErrorAction.PROMPT_RETRY,
+            suggestion="请检查技能调用参数类型是否正确",
+            recoverable=True,
+            details=details,
+            **kwargs
+        )
+
+class SkillNotImplementedError(WorkflowError):
+    """技能未实现 - [CRITICAL]Skill_not_inplemented_Error"""
+    def __init__(self, skill_name: str, method_name: str, **kwargs):
+        details = kwargs.get("details", {})
+        details["skill_name"] = skill_name
+        details["method_name"] = method_name
+        super().__init__(
+            code="2301",
+            message=f"技能 '{skill_name}' 未实现必要方法: {method_name}",
+            level="CRITICAL",
+            action=ErrorAction.PROMPT_RETRY,
+            suggestion="请检查技能实现是否完整",
+            recoverable=False,
+            details=details,
+            **kwargs
+        )
+
+
+# ==================== 工作流相关错误（根据todolist.md）====================
+
+class WorkflowNotAcyclicError(WorkflowError):
+    """工作流存在环 - [WARN]Workflow_not_Acyclic_Error"""
+    def __init__(self, workflow_id: str, cycle_nodes: list, **kwargs):
+        details = kwargs.get("details", {})
+        details["workflow_id"] = workflow_id
+        details["cycle_nodes"] = cycle_nodes
+        super().__init__(
+            code="5101",  # 5xxx 表示WARN级别
+            message=f"工作流 '{workflow_id}' 检测到环路",
+            level="WARN",
+            action=ErrorAction.PROMPT_RETRY,
+            suggestion="工作流出现可能的环路，不符合DAG设计结构，请尝试修改结构",
+            recoverable=True,
+            details=details,
+            **kwargs
+        )
+
+class WorkflowAttrValidateError(WorkflowError):
+    """工作流属性校验错误 - [ERROR]Workflow_attr_validate_Error"""
+    def __init__(self, workflow_id: str, attr_name: str, reason: str, **kwargs):
+        details = kwargs.get("details", {})
+        details["workflow_id"] = workflow_id
+        details["attr_name"] = attr_name
+        details["reason"] = reason
+        super().__init__(
+            code="3301",
+            message=f"工作流 '{workflow_id}' 属性校验失败: {attr_name} - {reason}",
+            level="ERROR",
+            action=ErrorAction.PROMPT_RETRY,
+            suggestion="请检查工作流配置是否正确",
+            recoverable=True,
+            details=details,
+            **kwargs
+        )
+
+
+# ==================== 原有错误类（保留但可以基于新类重构）====================
+
 class NetworkError(WorkflowError):
+    """网络相关错误"""
     def __init__(self, message: str, url: Optional[str] = None, **kwargs):
         details = kwargs.get("details", {})
         if url: details["url"] = url
@@ -212,6 +378,7 @@ class NetworkError(WorkflowError):
         )
 
 class ConfigError(WorkflowError):
+    """配置相关错误"""
     def __init__(self, message: str, config_path: Optional[str] = None, fatal: bool = False, **kwargs):
         details = kwargs.get("details", {})
         if config_path: details["config_path"] = config_path
@@ -225,6 +392,7 @@ class ConfigError(WorkflowError):
         )
 
 class UserMistakeError(WorkflowError):
+    """用户误触/输入错误 - 可忽略"""
     def __init__(self, message: str, field: Optional[str] = None, auto_fixed: bool = False, **kwargs):
         details = kwargs.get("details", {})
         if field: details["field"] = field
@@ -237,6 +405,7 @@ class UserMistakeError(WorkflowError):
         )
 
 class SkillError(WorkflowError):
+    """技能调用错误"""
     def __init__(self, skill_name: str, message: str, node_id: Optional[str] = None, **kwargs):
         details = kwargs.get("details", {})
         details["skill_name"] = skill_name
@@ -395,14 +564,38 @@ class Logger:
         """创建默认错误码文件"""
         os.makedirs(os.path.dirname(path), exist_ok=True)
         default = {
-            "version": "1.0",
-            "categories": {},
+            "version": "2.0",
+            "categories": {
+                "FATAL": {"name": "致命错误", "action": "exit", "recoverable": False},
+                "CRITICAL": {"name": "严重错误", "action": "prompt", "recoverable": False},
+                "ERROR": {"name": "一般错误", "action": "prompt", "recoverable": True},
+                "RETRY": {"name": "可重试", "action": "retry", "recoverable": True},
+                "WARN": {"name": "警告", "action": "ignore", "recoverable": True},
+                "INFO": {"name": "提示", "action": "ignore", "recoverable": True},
+                "DEBUG": {"name": "调试", "action": "ignore", "recoverable": True},
+                "IGNORE": {"name": "可忽略", "action": "ignore", "recoverable": True}
+            },
             "errors": {
-                "6001": {
-                    "category": "INFO",
-                    "message": "操作成功完成",
-                    "suggestion": ""
-                }
+                # JSON工具错误
+                "3101": {"category": "ERROR", "message": "技能JSON格式错误: {message}", "suggestion": "请检查技能配置文件格式"},
+                "3102": {"category": "ERROR", "message": "工作流JSON格式错误: {message}", "suggestion": "请检查工作流文件格式"},
+                "2101": {"category": "CRITICAL", "message": "JSON文件路径错误: {message}", "suggestion": "请在对应位置重建JSON文件"},
+                
+                # 插件/技能错误
+                "2201": {"category": "CRITICAL", "message": "插件模块未找到: {module_name}", "suggestion": "工作流/插件已损坏，请重新安装"},
+                "2202": {"category": "CRITICAL", "message": "插件属性未找到: {module_name}.{attribute_name}", "suggestion": "工作流/插件已损坏，请重新安装"},
+                "3201": {"category": "ERROR", "message": "技能参数类型错误: {skill_name}.{param_name}", "suggestion": "请检查技能调用参数类型"},
+                "2301": {"category": "CRITICAL", "message": "技能未实现: {skill_name}.{method_name}", "suggestion": "请检查技能实现是否完整"},
+                
+                # 工作流错误
+                "5101": {"category": "WARN", "message": "工作流检测到环路: {workflow_id}", "suggestion": "不符合DAG设计结构，请尝试修改"},
+                "3301": {"category": "ERROR", "message": "工作流属性校验失败: {workflow_id}.{attr_name}", "suggestion": "请检查工作流配置"},
+                
+                # 原有错误码
+                "6001": {"category": "INFO", "message": "操作成功完成", "suggestion": ""},
+                "4001": {"category": "RETRY", "message": "网络连接失败", "suggestion": "请检查网络连接"},
+                "3001": {"category": "ERROR", "message": "技能执行失败", "suggestion": "请检查技能实现"},
+                "8001": {"category": "IGNORE", "message": "用户输入错误", "suggestion": "系统已自动处理"}
             }
         }
         with open(path, 'w', encoding='utf-8') as f:
@@ -514,7 +707,11 @@ class Logger:
         if code and not suggestion:
             error_info = self._get_error_info(code)
             if error_info.get("message") and message == code:
-                message = error_info["message"]
+                # 如果message是错误码本身，尝试格式化
+                try:
+                    message = error_info["message"].format(**kwargs)
+                except:
+                    message = error_info["message"]
             suggestion = suggestion or error_info.get("suggestion")
             action = action or error_info.get("action")
             recoverable = recoverable if not code else error_info.get("recoverable", True)
@@ -592,6 +789,10 @@ class Logger:
         self.log("FATAL", message, code=code, action="exit", recoverable=False, **kwargs)
         sys.exit(1)
     
+    def critical(self, message: str, code: str = "2001", **kwargs):
+        """严重错误"""
+        self.log("CRITICAL", message, code=code, **kwargs)
+    
     def handle_error(self, error: WorkflowError):
         """处理工作流错误"""
         action = self.recovery.handle_error(error)
@@ -628,10 +829,88 @@ def get_logger(
         )
     return _default_logger
 
-# 导出常用类和函数
+# ==================== JSON工具集成函数 ====================
+
+def log_json_skill_error(message: str, file_path: Optional[str] = None, **kwargs):
+    """记录技能JSON格式错误"""
+    logger = get_logger()
+    error = JSONSkillFormatError(message, file_path, **kwargs)
+    return logger.handle_error(error)
+
+def log_json_workflow_error(message: str, workflow_id: Optional[str] = None, **kwargs):
+    """记录工作流JSON格式错误"""
+    logger = get_logger()
+    error = JSONWorkflowFormatError(message, workflow_id, **kwargs)
+    return logger.handle_error(error)
+
+def log_json_path_error(message: str, path: str, **kwargs):
+    """记录JSON路径错误"""
+    logger = get_logger()
+    error = JSONWritePathError(message, path, **kwargs)
+    return logger.handle_error(error)
+
+
+# ==================== 插件/技能集成函数 ====================
+
+def log_plugin_module_error(module_name: str, **kwargs):
+    """记录插件模块未找到错误"""
+    logger = get_logger()
+    error = PluginModuleNotFoundError(module_name, **kwargs)
+    return logger.handle_error(error)
+
+def log_plugin_attribute_error(module_name: str, attribute_name: str, **kwargs):
+    """记录插件属性未找到错误"""
+    logger = get_logger()
+    error = PluginAttributeNotFoundError(module_name, attribute_name, **kwargs)
+    return logger.handle_error(error)
+
+def log_skill_param_error(skill_name: str, param_name: str, expected_type: str, actual_type: str, **kwargs):
+    """记录技能参数类型错误"""
+    logger = get_logger()
+    error = SkillParamTypeError(skill_name, param_name, expected_type, actual_type, **kwargs)
+    return logger.handle_error(error)
+
+def log_skill_not_implemented_error(skill_name: str, method_name: str, **kwargs):
+    """记录技能未实现错误"""
+    logger = get_logger()
+    error = SkillNotImplementedError(skill_name, method_name, **kwargs)
+    return logger.handle_error(error)
+
+
+# ==================== 工作流集成函数 ====================
+
+def log_workflow_cycle_error(workflow_id: str, cycle_nodes: list, **kwargs):
+    """记录工作流环路错误"""
+    logger = get_logger()
+    error = WorkflowNotAcyclicError(workflow_id, cycle_nodes, **kwargs)
+    return logger.handle_error(error)
+
+def log_workflow_attr_error(workflow_id: str, attr_name: str, reason: str, **kwargs):
+    """记录工作流属性校验错误"""
+    logger = get_logger()
+    error = WorkflowAttrValidateError(workflow_id, attr_name, reason, **kwargs)
+    return logger.handle_error(error)
+
+
+# 导出所有类和函数
 __all__ = [
     'Logger', 'get_logger',
-    'WorkflowError', 'NetworkError', 'ConfigError', 
-    'UserMistakeError', 'SkillError', 'ErrorAction',
-    'ErrorLevel'
+    'WorkflowError', 'ErrorAction', 'ErrorLevel',
+    
+    # JSON工具错误
+    'JSONSkillFormatError', 'JSONWorkflowFormatError', 'JSONWritePathError',
+    'log_json_skill_error', 'log_json_workflow_error', 'log_json_path_error',
+    
+    # 插件/技能错误
+    'PluginModuleNotFoundError', 'PluginAttributeNotFoundError',
+    'SkillParamTypeError', 'SkillNotImplementedError',
+    'log_plugin_module_error', 'log_plugin_attribute_error',
+    'log_skill_param_error', 'log_skill_not_implemented_error',
+    
+    # 工作流错误
+    'WorkflowNotAcyclicError', 'WorkflowAttrValidateError',
+    'log_workflow_cycle_error', 'log_workflow_attr_error',
+    
+    # 原有错误
+    'NetworkError', 'ConfigError', 'UserMistakeError', 'SkillError'
 ]
