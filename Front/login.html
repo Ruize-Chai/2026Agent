@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <!-- Rounded font for the brand title -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Login card -->
+    <main class="login-shell">
+        <!-- Brand header -->
+        <div class="login-title">Oriflow Agent</div>
+        <!-- Input group -->
+        <div class="login-fields">
+            <input class="login-input" id="username" type="text" placeholder="username" autocomplete="username">
+            <input class="login-input" id="password" type="password" placeholder="password" autocomplete="current-password">
+        </div>
+        <!-- Primary action -->
+        <div class="login-actions">
+            <button class="login-button" type="button">Login</button>
+        </div>
+        <!-- Inline feedback -->
+        <div class="login-message" aria-live="polite"></div>
+    </main>
+</body>
+
+<script>
+    // Form behavior and API calls.
+    const inputs = Array.from(document.querySelectorAll(".login-input"));
+    const loginButton = document.querySelector(".login-button");
+    const messageBox = document.querySelector(".login-message");
+    const usernameInput = document.querySelector("#username");
+    const passwordInput = document.querySelector("#password");
+
+    const setMessage = (text, type = "") => {
+        messageBox.textContent = text;
+        messageBox.dataset.type = type;
+    };
+
+    const validateForm = () => {
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+
+        usernameInput.classList.remove("is-error");
+        passwordInput.classList.remove("is-error");
+
+        if (!username) {
+            usernameInput.classList.add("is-error");
+            setMessage("username is required", "error");
+            return null;
+        }
+
+        if (!password) {
+            passwordInput.classList.add("is-error");
+            setMessage("password is required", "error");
+            return null;
+        }
+
+        return { username, password };
+    };
+
+    const submitForm = async () => {
+        const payload = validateForm();
+        if (!payload) {
+            return;
+        }
+
+        loginButton.disabled = true;
+        setMessage("signing in...", "info");
+
+        try {
+            const response = await fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                if (response.status === 401) {
+                    usernameInput.classList.add("is-error");
+                    passwordInput.classList.add("is-error");
+                    setMessage(errorData.detail || "invalid username or password", "error");
+                    return;
+                }
+                setMessage(errorData.detail || "login failed", "error");
+                return;
+            }
+
+            setMessage("login success", "success");
+            passwordInput.value = "";
+        } catch (error) {
+            setMessage("network error", "error");
+        } finally {
+            loginButton.disabled = false;
+        }
+    };
+
+    inputs.forEach((input, index) => {
+        input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                const nextInput = inputs[index + 1];
+                if (nextInput) {
+                    nextInput.focus();
+                } else if (loginButton) {
+                    loginButton.focus();
+                }
+                return;
+            }
+
+            if (event.key === "ArrowDown") {
+                const nextInput = inputs[index + 1];
+                if (nextInput) {
+                    event.preventDefault();
+                    nextInput.focus();
+                }
+                return;
+            }
+
+            if (event.key === "ArrowUp") {
+                const prevInput = inputs[index - 1];
+                if (prevInput) {
+                    event.preventDefault();
+                    prevInput.focus();
+                }
+            }
+        });
+    });
+
+    loginButton.addEventListener("click", submitForm);
+</script>
+
+<style>
+    /* Theme tokens */
+    :root {
+        --bg-light: #3c424a;
+        --bg-mid: #22272e;
+        --bg-dark: #0f1216;
+        --glass: rgba(255, 255, 255, 0.18);
+    }
+
+    /* Page background and layout */
+    body {
+        margin: 0;
+        min-height: 100vh;
+        background: linear-gradient(135deg, var(--bg-light), var(--bg-mid), var(--bg-dark));
+        color: #1e1f24;
+        position: relative;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+    }
+
+    /* Card shell */
+    .login-shell {
+        width: min(70vw, 520px);
+        aspect-ratio: 0.618;
+        background: #ffffff;
+        border-radius: 5px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-rows: auto auto 1fr auto 1fr;
+        justify-items: center;
+        padding: 32px 0 24px;
+        box-sizing: border-box;
+    }
+
+    /* Title */
+    .login-title {
+        font-family: "Nunito", "Segoe UI", "PingFang SC", sans-serif;
+        font-size: 35px;
+        letter-spacing: 0.6px;
+        color: #1a1d22;
+        user-select: none;
+    }
+
+    /* Input layout */
+    .login-fields {
+        width: min(86%, 420px);
+        margin-top: 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 58px;
+    }
+
+    .login-actions {
+        grid-row: 4;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    /* Login button */
+    .login-button {
+        width: min(60%, 240px);
+        height: 44px;
+        border: none;
+        border-radius: 5px;
+        background: #0c0c0f;
+        color: #ffffff;
+        font-size: 17px;
+        letter-spacing: 0.4px;
+        cursor: pointer;
+        transition: transform 0.18s ease, background 0.18s ease;
+    }
+
+    .login-button:hover {
+        background: #11131a;
+        transform: scale(1.06);
+    }
+
+    /* Inputs */
+    .login-input {
+        height: 44px;
+        padding: 0 14px;
+        border-radius: 5px;
+        border: 1px solid #d9dde3;
+        background: #ffffff;
+        font-size: 14px;
+        color: #1a1d22;
+        outline: none;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .login-input::placeholder {
+        color: #8a919b;
+    }
+
+    .login-input:focus {
+        border-color: #4b5563;
+        box-shadow: 0 0 0 2px rgba(75, 85, 99, 0.15);
+    }
+
+    .login-input.is-error {
+        border-color: #c43b3b;
+        box-shadow: 0 0 0 2px rgba(196, 59, 59, 0.2);
+    }
+
+    /* Status message */
+    .login-message {
+        margin-top: 14px;
+        min-height: 20px;
+        font-size: 16px;
+        color: #5b636e;
+    }
+
+    .login-message[data-type="error"] {
+        color: #b42323;
+    }
+
+    .login-message[data-type="success"] {
+        color: #1a7f37;
+    }
+
+    /* Frosted background effects */
+    body::before {
+        content: "";
+        position: fixed;
+        inset: -10% 0 0 -10%;
+        background: radial-gradient(40% 35% at 50% 45%, rgba(255, 255, 255, 0.22), transparent 60%),
+            radial-gradient(60% 50% at 20% 20%, rgba(255, 255, 255, 0.28), transparent 60%),
+            radial-gradient(50% 40% at 80% 10%, rgba(255, 255, 255, 0.18), transparent 65%),
+            radial-gradient(55% 45% at 70% 80%, rgba(255, 255, 255, 0.12), transparent 70%);
+        filter: blur(18px);
+        opacity: 0.8;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: var(--glass);
+        backdrop-filter: blur(14px) saturate(120%);
+        -webkit-backdrop-filter: blur(14px) saturate(120%);
+        pointer-events: none;
+        z-index: 0;
+    }
+</style>
+</html>
