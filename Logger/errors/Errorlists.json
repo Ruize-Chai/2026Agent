@@ -1,0 +1,132 @@
+{
+  "errors": [
+    {
+      "code": 801,
+      "name": "NodeTypeError",
+      "message": "`type` must be a string",
+      "default_level": "error",
+      "category": "schema",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 802,
+      "name": "NodeInputsTypeError",
+      "message": "`inputs` must be a list of integers",
+      "default_level": "error",
+      "category": "schema",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 803,
+      "name": "NodeOutputsTypeError",
+      "message": "`outputs` must be a list of integers or None",
+      "default_level": "error",
+      "category": "schema",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 804,
+      "name": "NodeParamsTypeError",
+      "message": "`params` must be an object (dict)",
+      "default_level": "error",
+      "category": "schema",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 805,
+      "name": "NodeListenTypeError",
+      "message": "`listen` must be a list of integers",
+      "default_level": "error",
+      "category": "schema",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 806,
+      "name": "WorkflowIDTypeError",
+      "message": "`workflow_id` must be a non-empty string",
+      "default_level": "error",
+      "category": "workflow",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 807,
+      "name": "WorkflowEntryTypeError",
+      "message": "`entry` must be an integer",
+      "default_level": "error",
+      "category": "workflow",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 808,
+      "name": "WorkflowNodesTypeError",
+      "message": "`nodes` must be a non-empty list",
+      "default_level": "error",
+      "category": "workflow",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 809,
+      "name": "NodePayloadValidationError",
+      "message": "NodePayload validation failed",
+      "default_level": "error",
+      "category": "validation",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 810,
+      "name": "WorkflowPayloadValidationError",
+      "message": "WorkflowPayload validation failed",
+      "default_level": "error",
+      "category": "validation",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 811,
+      "name": "NodeDictValidationError",
+      "message": "Node dict validation failed",
+      "default_level": "error",
+      "category": "validation",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 812,
+      "name": "WorkflowDictValidationError",
+      "message": "Workflow dict validation failed",
+      "default_level": "error",
+      "category": "validation",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 813,
+      "name": "ReadFileNotFoundError",
+      "message": "Requested JSON file not found",
+      "default_level": "error",
+      "category": "io",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 814,
+      "name": "WriteFileNotFoundError",
+      "message": "Target file path not found for writing",
+      "default_level": "error",
+      "category": "io",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 901,
+      "name": "PluginImportError",
+      "message": "Plugin module import failed",
+      "default_level": "error",
+      "category": "plugin",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
+      "code": 902,
+      "name": "PluginInstantiateError",
+      "message": "Plugin instantiation failed",
+      "default_level": "error",
+      "category": "plugin",
+      "source": "Logger/errors/Errors.py"
+    }
+  ]
+}

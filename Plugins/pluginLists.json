@@ -1,0 +1,19 @@
+{
+	"basic_plugins": [
+		"Start",
+		"End",
+		"TextInput",
+		"NumberInput",
+		"Dropdown",
+		"Checkbox",
+		"Toggle",
+		"FileUpload",
+		"DelayTimer",
+		"HttpRequest",
+		"IfCondition",
+		"Split",
+		"Merge",
+		"Logger",
+		"Transformer"
+	]
+}
