@@ -37,7 +37,64 @@
           <FlowCanvas ref="canvas" :nodes="nodes" :nodeStates="nodeStates" @add="onAddNode" @select="onSelectNode" @update:nodes="onNodesUpdate" />
       <aside class="rightpanel">
         <Chatbox ref="chat" :initial="chatMessages" :showInput="false" />
-        <div class="run-controls">
+        <div v-if="!selectedRunWorkflow" class="node-config-panel">
+          <div v-if="selectedNode" class="config-section">
+            <h3 style="margin-top:0">Node Configuration</h3>
+            <el-form :model="selectedNode" label-width="100px" size="small">
+              <el-form-item label="Type">
+                <el-input v-model="selectedNode.type" disabled />
+              </el-form-item>
+              <el-form-item label="Node ID">
+                <el-input v-model="selectedNode.id" disabled />
+              </el-form-item>
+
+              <!-- Context Slots -->
+              <el-form-item label="Context Slots">
+                <div style="width:100%">
+                  <div v-for="(cs, i) in (selectedNode.params?.context_slot || [])" :key="i" style="display:flex;gap:6px;margin-bottom:8px;align-items:center">
+                    <el-input-number v-model="cs.id" :min="1" placeholder="Node ID" style="width:60px" />
+                    <el-input v-model="cs.key" placeholder="Key name" style="flex:1" />
+                    <el-button type="danger" size="small" @click="removeContextSlot(i)">Remove</el-button>
+                  </div>
+                  <el-button type="primary" size="small" @click="addContextSlot">+ Add Slot</el-button>
+                </div>
+              </el-form-item>
+
+              <!-- LLM Parameters (for LLM nodes) -->
+              <el-divider v-if="isLLMNode(selectedNode.type)" style="margin:8px 0" />
+              <div v-if="isLLMNode(selectedNode.type)">
+                <h4 style="margin:8px 0">LLM Parameters</h4>
+                <el-form-item label="Key">
+                  <el-input v-model="paramConfig.key" placeholder="e.g., answer" />
+                </el-form-item>
+                <el-form-item label="Model">
+                  <el-input v-model="paramConfig.model" placeholder="e.g., gpt-3.5-turbo" />
+                </el-form-item>
+                <el-form-item label="Max Tokens">
+                  <el-input-number v-model="paramConfig.max_tokens" :min="1" placeholder="256" />
+                </el-form-item>
+                <el-form-item label="Prompt Template">
+                  <el-input v-model="paramConfig.prompt_template" type="textarea" :rows="3" placeholder="Use {context} as placeholder" />
+                </el-form-item>
+
+                <!-- Special params for specific nodes -->
+                <el-form-item v-if="selectedNode.type === 'LLM_Translate'" label="Target Language">
+                  <el-input v-model="paramConfig.target_lang" placeholder="e.g., Spanish" />
+                </el-form-item>
+                <el-form-item v-if="selectedNode.type === 'LLM_CodeGeneration'" label="Language">
+                  <el-input v-model="paramConfig.language" placeholder="e.g., Python" />
+                </el-form-item>
+                <el-form-item v-if="selectedNode.type === 'LLM_FileProduction'" label="File Extension">
+                  <el-input v-model="paramConfig.file_ext" placeholder="e.g., txt" />
+                </el-form-item>
+              </div>
+            </el-form>
+          </div>
+          <div v-else style="padding:12px;text-align:center;color:var(--text-muted)">
+            <p>Select a node to configure</p>
+          </div>
+        </div>
+        <div v-else class="run-controls">
           <el-select v-model="selectedRunWorkflow" placeholder="Select workflow to run" style="width:100%;margin-bottom:8px" @change="onRunWorkflowSelect">
             <el-option v-for="w in workflows" :key="w.id" :label="w.name || w.filename" :value="w.id" />
           </el-select>
@@ -78,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import * as api from '../api/oriflow'
 import NodeToolbox from '../components/NodeToolbox.vue'
 import FlowCanvas from '../components/FlowCanvas.vue'
@@ -96,6 +153,17 @@ const newWorkflowId = ref<string>('')
 const chat = ref<any>(null)
 const chatMessages = ref([])
 const selectedRunWorkflow = ref<string | null>(null)
+
+// Node parameter configuration
+const paramConfig = reactive({
+  key: 'answer',
+  model: 'gpt-3.5-turbo',
+  max_tokens: 256,
+  prompt_template: '',
+  target_lang: 'English',
+  language: 'Python',
+  file_ext: 'txt'
+})
 
 // LLM Configuration
 const llmReady = ref(false)
@@ -150,7 +218,20 @@ function onSelectWorkflow(id: string) {
 }
 
 function onAddNode(n: any) { nodes.value.push(n) }
-function onSelectNode(n: any) { selectedNode.value = n }
+function onSelectNode(n: any) {
+  selectedNode.value = n
+  // Load param_config for this node
+  const pc = n.params?.param_config || {}
+  Object.assign(paramConfig, {
+    key: pc.key || 'answer',
+    model: pc.model || 'gpt-3.5-turbo',
+    max_tokens: pc.max_tokens || 256,
+    prompt_template: pc.prompt_template || '',
+    target_lang: pc.target_lang || 'English',
+    language: pc.language || 'Python',
+    file_ext: pc.file_ext || 'txt'
+  })
+}
 function onNodesUpdate(v: any[]) { nodes.value = v }
 
 function addContextSlot() {
@@ -172,7 +253,7 @@ async function runWorkflow() {
   chat.value?.appendSystemMessage(`Workflow "${selectedWorkflow.value}" started`, '▶️ RUN')
 
   // start SSE run and listen for states
-  const gen = api.runWorkflowEvents(selectedWorkflow.value)
+  const gen = api.runWorkflowEvents(selectedWorkflow.value);
   (async () => {
     for await (const ev of gen) {
       // ev is NodeStateListPayload
@@ -248,7 +329,7 @@ async function startRunWorkflow() {
   chat.value?.appendSystemMessage(`Workflow "${selectedRunWorkflow.value}" started`, '▶️ RUN')
 
   // start SSE run and listen for states
-  const gen = api.runWorkflowEvents(selectedRunWorkflow.value)
+  const gen = api.runWorkflowEvents(selectedRunWorkflow.value);
   (async () => {
     for await (const ev of gen) {
       // ev is NodeStateListPayload
@@ -325,6 +406,17 @@ async function createWorkflow() {
   }
 }
 
+function isLLMNode(nodeType: string): boolean {
+  return nodeType?.startsWith('LLM_') || false
+}
+
+// Watch paramConfig and sync to selectedNode
+watch(paramConfig, (newVal) => {
+  if (!selectedNode.value || !isLLMNode(selectedNode.value.type)) return
+  if (!selectedNode.value.params) selectedNode.value.params = {}
+  selectedNode.value.params.param_config = { ...newVal }
+}, { deep: true })
+
 onMounted(()=>{
   loadWorkflowList()
   loadLLMConfig()
@@ -360,7 +452,11 @@ async function submitIntervention() {
 .home-root { height:100vh; display:flex; flex-direction:column; background:#0f172a; color:#e6eef8 }
 .topbar { height:64px; display:flex; align-items:center; justify-content:space-between; padding:0 16px; border-bottom:1px solid rgba(255,255,255,0.03) }
 .main { display:flex; flex:1 }
-.rightpanel { width:400px; border-left:1px solid rgba(255,255,255,0.03); display:flex; flex-direction:column }
+.rightpanel { width:400px; border-left:1px solid rgba(255,255,255,0.03); display:flex; flex-direction:column; overflow-y:auto }
+.node-config-panel { padding:12px; flex:1; overflow-y:auto }
+.config-section { }
+.config-section h3 { color:#e6eef8; margin:0 0 12px 0; font-size:14px }
+.config-section h4 { color:rgba(230,238,248,0.8); margin:8px 0; font-size:12px }
 .run-controls { padding:12px; border-top:1px solid rgba(255,255,255,0.03) }
 .mode-toggle { padding:12px }
 .props-panel { padding:12px }

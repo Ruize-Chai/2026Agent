@@ -18,6 +18,12 @@ import DelayTimerNode from './DelayTimerNode.vue'
 import IfConditionNode from './IfConditionNode.vue'
 import LLMAnswerNode from './LLMAnswerNode.vue'
 import LLMFileProductionNode from './LLMFileProductionNode.vue'
+import LLMGenerateWorkflowNode from './LLMGenerateWorkflowNode.vue'
+import LLMSummarizeNode from './LLMSummarizeNode.vue'
+import LLMQANode from './LLMQANode.vue'
+import LLMTranslateNode from './LLMTranslateNode.vue'
+import LLMCodeGenerationNode from './LLMCodeGenerationNode.vue'
+import LLMConversationNode from './LLMConversationNode.vue'
 
 const props = defineProps<{ node: any; state?: string; style?: any }>()
 const emit = defineEmits(['select','moved','create','delete'])
@@ -33,6 +39,12 @@ const mapping: Record<string, any> = {
   'IFCONDITION': IfConditionNode,
   'LLM_Answer': LLMAnswerNode,
   'LLM_FileProduction': LLMFileProductionNode,
+  'LLM_GenerateWorkflow': LLMGenerateWorkflowNode,
+  'LLM_Summarize': LLMSummarizeNode,
+  'LLM_QA': LLMQANode,
+  'LLM_Translate': LLMTranslateNode,
+  'LLM_CodeGeneration': LLMCodeGenerationNode,
+  'LLM_Conversation': LLMConversationNode,
 }
 
 const node = props.node

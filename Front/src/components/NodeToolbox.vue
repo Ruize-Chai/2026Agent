@@ -55,7 +55,7 @@
       <div class="group-title">AI & LLM</div>
       <ul class="node-list">
         <li
-          v-for="t in filterNodes(['LLM_Answer', 'LLM_FileProduction'])"
+          v-for="t in filterNodes(['LLM_Answer', 'LLM_FileProduction', 'LLM_GenerateWorkflow', 'LLM_Summarize', 'LLM_QA', 'LLM_Translate', 'LLM_CodeGeneration', 'LLM_Conversation'])"
           :key="t"
           :draggable="true"
           @dragstart="onDragStart($event, t)"
@@ -103,7 +103,8 @@ const allTypes = [
   'TEXT INPUT', 'NUMBER INPUT',
   'CHATBOX', 'CHECKBOX',
   'DELAYTIMER', 'IFCONDITION',
-  'LLM_Answer', 'LLM_FileProduction'
+  'LLM_Answer', 'LLM_FileProduction', 'LLM_GenerateWorkflow',
+  'LLM_Summarize', 'LLM_QA', 'LLM_Translate', 'LLM_CodeGeneration', 'LLM_Conversation'
 ]
 
 const searchQuery = ref('')
