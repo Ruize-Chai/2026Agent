@@ -31,9 +31,9 @@ if str(REPO_ROOT) not in sys.path:
 
 from LLM import create_client, set_llm_api, clear_llm_api, get_llm_api
 from types import SimpleNamespace
-from Json_Utils.json_validate import is_valid_workflow_dict
+from Json_Utils.json_validate import is_valid_workflow_dict, is_valid_workflow_payload
 
-def load_generation_context() -> str:
+def load_generation_context(current_workflow: Optional[str] = None) -> tuple[str, list[str]]:
     """加载生成工作流所需的上下文信息（Prompt、插件列表等）。"""
     try:
         # 1. 加载 Schema Rules
@@ -50,26 +50,15 @@ def load_generation_context() -> str:
         
         context = f"### SCHEMA RULES:\n{schema_rules}\n\n"
         context += f"### AVAILABLE PLUGINS (ONLY USE THESE IN 'type' FIELD):\n{', '.join(all_plugins)}\n\n"
-        context += "### EXAMPLE VALID STRUCTURE (FOLLOW THIS STRICTLY):\n"
-        context += """
-{
-  "workflow_id": "example_id",
-  "entry": 1,
-  "nodes": [
-    {
-      "id": 1,
-      "type": "Start",
-      "params": {},
-      "inputs": [],
-      "outputs": [2]
-    }
-  ]
-}
-"""
-        context += "\n### OUTPUT REQUIREMENT:\nReturn ONLY a valid JSON object. Ensure EVERY node has 'id', 'type', 'params', 'inputs', and 'outputs' (use [] if empty). No conversational filler."
-        return context
+        
+        if current_workflow:
+            context += f"### CURRENT WORKFLOW (STAGED):\n{current_workflow}\n\n"
+            context += "### TASK: Modify or Iterate the CURRENT WORKFLOW based on user instructions.\n"
+            context += "CRITICAL: You MUST maintain the existing logic unless asked to change it. Output EVERY required field (id, type, params, inputs, outputs) for EVERY node, even if unchanged.\n"
+        
+        return context, all_plugins
     except Exception as e:
-        return f"Context loading failed: {e}"
+        return f"Context loading failed: {e}", []
 
 class ChatBubble(Static):
     def __init__(self, who: str, text: str, **kwargs):
@@ -84,6 +73,7 @@ class ChatBubble(Static):
 
 
 class TextualChatApp(App):
+    TITLE = "Oriflow Smith"
     BINDINGS = [("ctrl+c", "quit", "Quit")]
     
     # 增加 CSS 样式以确保聊天区域可滚动且不溢出
@@ -135,7 +125,7 @@ class TextualChatApp(App):
             yield Button("生成", id="send")
             yield Button("保存 JSON", id="save")
         # help / command hints under input
-        yield Static("Commands: @G <instruction> — generate workflow", id="help")
+        yield Static("Commands: @G <instruction> — gen | @Ud <instruction> — update | @It <feedback> — iterate", id="help")
 
         yield Footer()
 
@@ -191,58 +181,148 @@ class TextualChatApp(App):
         self.input.value = ""
         
 
-        # If user input begins with @G, run the fixed GenerateWorkflow flow
-        if text.startswith("@G"):
-            # collect context from previous messages (simple concatenation)
-            ctx_lines = []
-            for line in self._msg_lines:
-                ctx_lines.append(line)
+        # --- ALPHA FEATURE: Workflow Workspace Controls ---
+        # @G: Create New
+        # @Ud: Update (Change fields, rename, etc.)
+        # @It: Iterate (Logic change, add nodes, logic fix)
+        
+        is_workflow_cmd = any(text.startswith(prefix) for prefix in ["@G", "@Ud", "@It"])
 
-            # also include remainder after @G as instruction
-            remainder = text[2:].strip()
-            if remainder:
-                ctx_lines.append(f"INSTRUCTION: {remainder}")
+        if is_workflow_cmd:
+            cmd = text[:3].strip() # handles @G, @Ud, @It
+            remainder = text[len(cmd):].strip()
 
-            # 获取包含 Schema Rules 和 Plugin 列表的上下文
-            gen_context = load_generation_context()
-            prompt = f"{gen_context}\n\nUSER REQUEST: {remainder}\n\nGENERATE WORKFLOW JSON NOW:\n"
+            # 准备上下文
+            # 如果是 @Ud 或 @It，注入 self.last_generated 作为 Current Workflow
+            staged_workflow = None
+            if cmd in ["@Ud", "@It"] and self.last_generated:
+                staged_workflow = self.last_generated
 
-            await self.append_message("SYSTEM", "开始按 Schema 生成工作流...")
-            try:
-                generated = await self.client.generate_async(prompt, model="minimax/minimax-m2.5", max_tokens=1024)
-            except Exception as e:
-                generated = f"LLM call failed: {e}"
-
-            # 提取 JSON (防止 LLM 输出 Markdown 代码块)
-            raw_content = generated.strip()
-            if raw_content.startswith("```json"):
-                raw_content = raw_content[7:]
-            if raw_content.strip().endswith("```"):
-                # 处理末尾可能有的 ``` 标号
-                idx = raw_content.rfind("```")
-                if idx != -1:
-                    raw_content = raw_content[:idx]
-            raw_content = raw_content.strip()
-
-            await self.append_message("ASSISTANT", raw_content)
-
-            # 校验与展示逻辑
-            pretty = raw_content
+            gen_context, all_plugins = load_generation_context(current_workflow=staged_workflow)
+            
+            if cmd == "@G":
+                msg = "开始按 Schema 生成工作流..."
+                prompt = (
+                    f"SYSTEM ROLE: You are a Workflow Creator. Output ONLY JSON.\n\n"
+                    f"CRITICAL FORMAT RULES:\n"
+                    f"1. Root object must be {{ \"workflow_id\": \"...\", \"entry\": 1, \"nodes\": [...] }}\n"
+                    f"2. Every node must have: \"id\" (int), \"type\" (string), \"params\" (obj), \"inputs\" (list), \"outputs\" (list).\n\n"
+                    f"STRICT PLUGIN RULES:\n"
+                    f"1. You MUST ONLY use node types from the 'ALLOWED_PLUGINS' list below.\n"
+                    f"2. DO NOT hallucinate or invent new node types (like 'delay', 'action', etc.).\n"
+                    f"3. Logic must be mapped to these specific available tools.\n\n"
+                    f"ALLOWED_PLUGINS:\n{all_plugins}\n\n"
+                    f"STRICT LOGIC RULES:\n"
+                    f"1. NO internal code/scripts in params.\n"
+                    f"2. ALL logic via Nodes and Connections.\n\n"
+                    f"{gen_context}\n\nUSER REQUEST: {remainder}\n\nGENERATE NEW JSON:"
+                )
+            elif cmd == "@Ud":
+                msg = "正在局部更新/重命名工作流..."
+                prompt = (
+                    f"SYSTEM ROLE: You are a Workflow Editor. Modify ONLY specific fields requested. Output ONLY JSON.\n\n"
+                    f"CRITICAL FORMAT RULES:\n"
+                    f"1. Root object must be {{ \"workflow_id\": \"...\", \"entry\": 1, \"nodes\": [...] }}\n"
+                    f"2. Every node must have: \"id\" (int), \"type\" (string), \"params\" (obj), \"inputs\" (list), \"outputs\" (list).\n\n"
+                    f"STRICT PLUGIN RULES:\n"
+                    f"1. You MUST ONLY use node types from the 'ALLOWED_PLUGINS' list below.\n"
+                    f"2. ALLOWED_PLUGINS:\n{all_plugins}\n\n"
+                    f"{gen_context}\n\nUSER REQUEST: {remainder}\n\nRETURN UPDATED JSON:"
+                )
+            else: # @It
+                msg = "正在根据逻辑迭代工作流..."
+                prompt = (
+                    f"SYSTEM ROLE: You are a Workflow Optimization Expert. Improve logic via Nodes and Connections. Output ONLY JSON.\n\n"
+                    f"CRITICAL FORMAT RULES:\n"
+                    f"1. Root object must be {{ \"workflow_id\": \"...\", \"entry\": 1, \"nodes\": [...] }}\n"
+                    f"2. Every node must have: \"id\" (int), \"type\" (string), \"params\" (obj), \"inputs\" (list), \"outputs\" (list).\n\n"
+                    f"STRICT PLUGIN RULES:\n"
+                    f"1. You MUST ONLY use node types from the 'ALLOWED_PLUGINS' list below.\n"
+                    f"2. DO NOT invent node types. Mapping logic to existing plugins is mandatory.\n\n"
+                    f"ALLOWED_PLUGINS:\n{all_plugins}\n\n"
+                    f"{gen_context}\n\nUSER FEEDBACK: {remainder}\n\nRETURN IMPROVED JSON:"
+                )
+            # 提高 tokens 到 2048 处理复杂更新
+            await self.append_message("SYSTEM", msg)
+            
+            # --- 核心修复：Schema 校验重试机制 (限3次) ---
+            max_retries = 3
+            current_try = 0
+            raw_content = ""
+            parsed = None
             as_json = False
-            try:
-                parsed = json.loads(raw_content)
-                as_json = True
+            last_error = ""
+
+            # 复用 prompt，但在重试时注入错误信息
+            active_prompt = prompt
+
+            while current_try < max_retries:
+                current_try += 1
                 try:
+                    # 针对迭代任务，稍微提高 temperature 到 0.2 以允许更好的逻辑联想，但保持结构严谨
+                    temp = 0.0 if cmd == "@Ud" else 0.2
+                    generated = await self.client.generate_async(active_prompt, model="minimax/minimax-m2.5", max_tokens=2048, temperature=temp)
+                except Exception as e:
+                    generated = f"LLM call failed: {e}"
+                    break # 网络或接口错误直接跳出
+
+                # 提取 JSON (防止 LLM 输出 Markdown 代码块)
+                raw_content = generated.strip()
+                if "```json" in raw_content:
+                    raw_content = raw_content.split("```json")[1]
+                    if "```" in raw_content: raw_content = raw_content.split("```")[0].strip()
+                elif "```" in raw_content:
+                    raw_content = raw_content.split("```")[1]
+                    if "```" in raw_content: raw_content = raw_content.split("```")[0].strip()
+                raw_content = raw_content.strip()
+
+                try:
+                    parsed = json.loads(raw_content)
+                    
+                    # --- 自动解包逻辑：如果模型嵌套了 "workflow": { ... }，尝试自动修复 ---
+                    if "workflow" in parsed and "nodes" in parsed["workflow"]:
+                        parsed = parsed["workflow"]
+                    elif "data" in parsed and "nodes" in parsed["data"]:
+                        parsed = parsed["data"]
+
+                    # 组合校验：先基础结构校验，再 Pydantic 深度校验
                     is_valid_workflow_dict(parsed)
-                    await self.append_message("SYSTEM", "✅ Schema 校验通过！")
+                    is_valid_workflow_payload(parsed)
+
+                    # --- 新增：禁止在 params 中嵌入代码的启发式校验 ---
+                    for node in parsed.get("nodes", []):
+                        # 1. 代码黑名单检查
+                        params_str = json.dumps(node.get("params", {}))
+                        forbidden_patterns = ["def ", "import ", "lambda ", "class ", "return ", "print("]
+                        if any(p in params_str for p in forbidden_patterns):
+                            raise Exception(f"Node {node.get('id')} contains forbidden code patterns in params!")
+                        
+                        # 2. 严格插件名检查 (核心修复：防止模型幻觉)
+                        allowed_types = all_plugins # all_plugins 已经是字符串列表了
+                        curr_type = node.get("type")
+                        if curr_type not in allowed_types:
+                            raise Exception(f"Invalid Plugin Type: '{curr_type}'. You MUST use one of: {allowed_types}")
+                    
+                    as_json = True
+                    await self.append_message("SYSTEM", f"✅ 第 {current_try} 次尝试: Schema 校验通过！")
+                    break # 校验成功，跳出循环
                 except Exception as ve:
-                    await self.append_message("SYSTEM", f"❌ Schema 校验失败: {ve}")
-                
-                # 美化显示
+                    last_error = str(ve)
+                    # 简化错误信息，只传给模型核心部分
+                    error_msg = last_error.split("\n")[0] if "\n" in last_error else last_error
+                    await self.append_message("SYSTEM", f"⚠️ 第 {current_try} 次尝试校验失败: {error_msg}")
+                    # 构造后续尝试的 Prompt
+                    active_prompt = f"{prompt}\n\nPREVIOUS ERROR: {last_error}\n\nPlease fix the JSON according to the error above. Ensure all required fields like 'id', 'type', 'inputs', 'outputs', 'params' are present for EVERY node. Use the exact Schema structure provided in the context."
+
+            # 最终展示逻辑
+            if as_json and parsed:
                 pretty = json.dumps(parsed, indent=2, ensure_ascii=False)
-            except Exception as e:
-                await self.append_message("SYSTEM", f"JSON 解析失败: {e}")
-                pretty = generated
+                await self.append_message("ASSISTANT", pretty)
+            else:
+                # 即使失败了，也要把最后一次的结果丢出来看看
+                await self.append_message("ASSISTANT", raw_content)
+                await self.append_message("SYSTEM", f"❌ 达到最大重试次数 ({max_retries})，最后一次错误: {last_error}")
+                pretty = raw_content
 
             self.last_generated = pretty
             try:
@@ -250,47 +330,45 @@ class TextualChatApp(App):
             except Exception:
                 pass
 
-            # auto-save behavior
+            # 核心修复：确保在此处进行保存
             try:
-                base_dir = os.path.join(os.getcwd(), "WorkflowBase")
+                base_dir = REPO_ROOT / "WorkflowBase"
                 os.makedirs(base_dir, exist_ok=True)
                 
-                # 优先使用 JSON 中的 workflow_id 作为文件名
+                # 确定 ID 和文件名
                 if as_json and isinstance(parsed, dict) and parsed.get("workflow_id"):
-                    filename = f"{parsed['workflow_id']}.json"
                     wid = parsed["workflow_id"]
                 else:
-                    wid = str(uuid.uuid4())
-                    filename = f"{wid}.json"
+                    wid = f"gen-{uuid.uuid4().hex[:8]}"
                 
-                path = os.path.join(base_dir, filename)
+                filename = f"{wid}.json"
+                save_path = base_dir / filename
                 
                 # 写入文件
-                with open(path, "w", encoding="utf-8") as f:
+                with open(save_path, "w", encoding="utf-8") as f:
                     f.write(pretty)
 
-                # 更新 workflowlists.json 索引
-                lists_path = os.path.join(base_dir, "workflowlists.json")
+                # 同步更新索引 workflowlists.json
+                lists_path = base_dir / "workflowlists.json"
                 lists = []
-                try:
-                    if os.path.exists(lists_path):
+                if lists_path.exists():
+                    try:
                         with open(lists_path, "r", encoding="utf-8") as f:
                             lists = json.load(f)
-                        if not isinstance(lists, list):
-                            lists = []
-                except Exception:
-                    lists = []
+                            if not isinstance(lists, list):
+                                lists = []
+                    except:
+                        lists = []
                 
-                # 避免重复添加同一个 ID
+                # 更新或添加索引
                 if not any(item.get("id") == wid for item in lists):
                     lists.append({"id": wid, "filename": filename})
-                
-                with open(lists_path, "w", encoding="utf-8") as f:
-                    json.dump(lists, f, ensure_ascii=False, indent=2)
+                    with open(lists_path, "w", encoding="utf-8") as f:
+                        json.dump(lists, f, ensure_ascii=False, indent=2)
 
-                await self.append_message("SYSTEM", f"工作流已同步至本地: {filename}")
+                await self.append_message("SYSTEM", f"💾 工作流已持久化至: {filename}")
             except Exception as e:
-                await self.append_message("SYSTEM", f"本地同步失败: {e}")
+                await self.append_message("SYSTEM", f"⚠️ 本地保存失败: {e}")
 
             return
 
