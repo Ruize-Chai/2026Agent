@@ -265,6 +265,14 @@
       "source": "Logger/errors/Errors.py"
     },
     {
+      "code": 834,
+      "name": "UnregisteredStateError",
+      "message": "Unregistered state",
+      "default_level": "error",
+      "category": "workflow",
+      "source": "Logger/errors/Errors.py"
+    },
+    {
       "code": 901,
       "name": "PluginImportError",
       "message": "Plugin module import failed",

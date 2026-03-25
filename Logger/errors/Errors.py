@@ -111,7 +111,6 @@ class NodeListenTypeError(OriflowError):
 __all__ = [
     "SeverityLevel",
     "OriflowError",
-    "NodeTypeError",
     "NodeInputsTypeError",
     "NodeOutputsTypeError",
     "NodeParamsTypeError",
@@ -475,6 +474,18 @@ __all__.extend([
     "EachNodeMustBeObject",
     "NodeIDMustBeInteger",
     "NodeTypeMustBeString",
+    "UnregisteredStateError",
 ])
+
+
+#834
+class UnregisteredStateError(OriflowError):
+    DEFAULT_CODE = 834
+
+    def __init__(self, message: Optional[str] = None, code: Optional[int] = None,
+                 level: Optional[SeverityLevel] = None):
+        if message is None:
+            message = "Unregistered state"
+        super().__init__(message, code or self.DEFAULT_CODE, level)
 
 

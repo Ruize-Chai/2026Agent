@@ -1,0 +1,66 @@
+[
+  {
+    "node_type": "Start",
+    "inputs": []
+  },
+  {
+    "node_type": "End",
+    "inputs": []
+  },
+  {
+    "node_type": "TextInput",
+    "inputs": []
+  },
+  {
+    "node_type": "NumberInput",
+    "inputs": []
+  },
+  {
+    "node_type": "Checkbox",
+    "inputs": ["context_slot"]
+  },
+  {
+    "node_type": "CHATbox",
+    "inputs": ["context_slot"]
+  },
+  {
+    "node_type": "IfCondition",
+    "inputs": ["context_slot"]
+  },
+  {
+    "node_type": "DelayTimer",
+    "inputs": []
+  },
+  {
+    "node_type": "LLM_Answer",
+    "inputs": ["context_slot"]
+  },
+  {
+    "node_type": "LLM_CodeGeneration",
+    "inputs": ["context_slot"]
+  },
+  {
+    "node_type": "LLM_Summarize",
+    "inputs": ["context_slot"]
+  },
+  {
+    "node_type": "LLM_Conversation",
+    "inputs": ["context_slot"]
+  },
+  {
+    "node_type": "LLM_QA",
+    "inputs": ["context_slot"]
+  },
+  {
+    "node_type": "LLM_Translate",
+    "inputs": ["context_slot"]
+  },
+  {
+    "node_type": "LLM_FileProduction",
+    "inputs": ["context_slot"]
+  },
+  {
+    "node_type": "LLM_GenerateWorkflow",
+    "inputs": ["context_slot"]
+  }
+]

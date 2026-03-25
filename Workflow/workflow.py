@@ -103,7 +103,7 @@ class WorkflowEngine:
         entry_id = int(entry_id) if entry_id is not None else 0
         entry = self.nodes.get(entry_id)
         if entry is None:
-            raise RuntimeError(f"Entry node {entry_id} not found")
+                raise RuntimeError(f"Entry node {entry_id} not found")
 
         if timeout is None:
             await entry.serve()

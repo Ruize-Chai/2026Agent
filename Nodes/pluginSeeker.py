@@ -10,6 +10,7 @@
 
 from importlib import import_module
 from typing import Any, Dict, Optional, List, Callable
+from Logger import PluginImportError
 
 
 _DEFAULT_IN_HUB = None
@@ -125,4 +126,4 @@ def find_plugin(
 			instance = cls(data)
 			return instance
 
-	raise ImportError(f"Could not load plugin for type '{node_type}'") from last_err
+	raise PluginImportError(f"Could not load plugin for type '{node_type}'") from last_err

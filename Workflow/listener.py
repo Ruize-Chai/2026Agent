@@ -1,6 +1,8 @@
 from threading import Lock
 from typing import Dict, List, Any, Optional
 
+from Logger import UnregisteredStateError
+
 
 class FlowListener:
     """状态监视器总线:维护节点状态表并提供线程安全的读/写接口。
@@ -28,7 +30,7 @@ class FlowListener:
         """设置节点的状态（线程安全）。若状态不在静态集合中则抛错。"""
         with self._lock:
             if state not in self._allowed_states:
-                raise ValueError(f"Unregistered state: {state}")
+                raise UnregisteredStateError(f"Unregistered state: {state}")
             self._state_table[int(node_id)] = state
 
     def get_state(self, node_id: int) -> Optional[str]:

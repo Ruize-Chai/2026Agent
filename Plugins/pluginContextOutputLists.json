@@ -1,0 +1,66 @@
+[
+    {
+        "node_type": "Start",
+        "contexts": []
+    },
+    {
+        "node_type": "End",
+        "contexts": []
+    },
+    {
+        "node_type": "TextInput",
+        "contexts": ["text"]
+    },
+    {
+        "node_type": "NumberInput",
+        "contexts": ["number"]
+    },
+    {
+        "node_type": "Checkbox",
+        "contexts": ["selection", "options"]
+    },
+    {
+        "node_type": "CHATbox",
+        "contexts": ["message"]
+    },
+    {
+        "node_type": "IfCondition",
+        "contexts": []
+    },
+    {
+        "node_type": "DelayTimer",
+        "contexts": []
+    },
+    {
+        "node_type": "LLM_Answer",
+        "contexts": ["answer"]
+    },
+    {
+        "node_type": "LLM_CodeGeneration",
+        "contexts": ["answer"]
+    },
+    {
+        "node_type": "LLM_Summarize",
+        "contexts": ["answer"]
+    },
+    {
+        "node_type": "LLM_Conversation",
+        "contexts": ["answer"]
+    },
+    {
+        "node_type": "LLM_QA",
+        "contexts": ["answer"]
+    },
+    {
+        "node_type": "LLM_Translate",
+        "contexts": ["answer"]
+    },
+    {
+        "node_type": "LLM_FileProduction",
+        "contexts": ["file_id", "path"]
+    },
+    {
+        "node_type": "LLM_GenerateWorkflow",
+        "contexts": ["workflow_id", "path"]
+    }
+]

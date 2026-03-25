@@ -34,6 +34,7 @@ from .errors.Errors import (
     EachNodeMustBeObject,
     NodeIDMustBeInteger,
     NodeTypeMustBeString,
+    UnregisteredStateError,
     PluginImportError,
     PluginInstantiateError,
 )
@@ -74,6 +75,7 @@ __all__ = [
     "EachNodeMustBeObject",
     "NodeIDMustBeInteger",
     "NodeTypeMustBeString",
+    "UnregisteredStateError",
     "PluginImportError",
     "PluginInstantiateError",
 ]
