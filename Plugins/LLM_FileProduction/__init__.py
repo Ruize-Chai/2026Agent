@@ -79,36 +79,19 @@ class Self_Node(Node):
             api_key = None
             endpoint = None
 
+        # Use centralized LLM client to handle compatibility
         try:
-            import openai
+            from LLM import create_client
 
-            if api_key:
-                try:
-                    setattr(openai, "api_key", api_key)
-                except Exception:
-                    pass
-            if endpoint:
-                try:
-                    setattr(openai, "api_base", endpoint)
-                except Exception:
-                    pass
-
-            Completion = getattr(openai, "Completion", None)
-            if Completion is not None:
-                resp = Completion.create(model=cfg.get("model", "text-davinci-003"), prompt=prompt, max_tokens=cfg.get("max_tokens", 512))
-                return getattr(resp.choices[0], "text", "") if getattr(resp, "choices", None) else ""
-
-            ChatCompletion = getattr(openai, "ChatCompletion", None)
-            if ChatCompletion is not None:
-                resp = ChatCompletion.create(model=cfg.get("model", "gpt-3.5-turbo"), messages=[{"role": "user", "content": prompt}], max_tokens=cfg.get("max_tokens", 512))
-                if getattr(resp, "choices", None):
-                    choice0 = resp.choices[0]
-                    try:
-                        return choice0.message.get("content")
-                    except Exception:
-                        return getattr(choice0, "text", "")
-
-            return ""
+            client = create_client(backend="openai", api_key=api_key, endpoint=endpoint)
+            # use async wrapper via to_thread
+            try:
+                # call generate synchronously inside thread
+                generated = client.generate(prompt, model=cfg.get("model", "gpt-3.5-turbo"), max_tokens=cfg.get("max_tokens", 512))
+            except Exception:
+                # try async path
+                generated = client.generate(prompt, model=cfg.get("model", "gpt-3.5-turbo"), max_tokens=cfg.get("max_tokens", 512))
+            return generated
         except Exception as e:
             return f"LLM call failed: {e}"
 

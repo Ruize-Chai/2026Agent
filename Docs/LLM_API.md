@@ -38,8 +38,8 @@ async def main():
 asyncio.run(main())
 ```
 
-离线/测试模式
-- 可以使用 `create_client(backend='mock')` 在无网络或无 `openai` 包时获得可预测的字符串返回，便于 TUI 或单元测试。
+注意
+- 本库已移除离线 `mock` 后端，`create_client` 仅支持 `openai` 后端。如需测试模式，请使用专门的测试替身或在测试中模拟 `LLMClient`。
 
 注意
 - 1) 目前对 `openai` 的调用使用同步客户端并通过 `asyncio.to_thread` 提供异步包装。

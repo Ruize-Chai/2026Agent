@@ -1,64 +1,39 @@
-# Oriflow-Agent BETA 1.0
+# Oriflow-Agent (Workflow Generator)
 
-Oriflow-Agent is a prototype workflow engine that supports plugin-based nodes, runtime orchestration, and LLM-driven nodes.
+Oriflow-Agent is a specialized TUI (Terminal User Interface) based generation system that transforms natural language into schema-compliant, executable workflow JSON files.
 
-Contents
-- `main.py` — FastAPI server entrypoint exposing management and runtime APIs.
-- `Workflow/` — Runtime engine and helpers (`WorkflowEngine`, `PinManager`, `InCommunicateHub`, `ExCommunicateHub`, `FlowListener`, `Interrupt`).
-- `Nodes/` — Node base classes and plugin loader.
-- `Plugins/` — Built-in node implementations (basic and LLM plugins).
-- `Docs/` — Documentation: node contexts, param_config reference, server API.
+## Quick Start
 
-Quick Start
-1. Install dependencies:
+### 1. Prerequisites
+Ensure Python 3.10+ is installed, then install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
-2. Run server:
+
+### 2. Configure & Launch
+Start the interactive generator using `tools/textual_tui.py`:
 ```bash
-python main.py
-# or
-uvicorn main:app --reload --host 127.0.0.1 --port 8000
+python tools/textual_tui.py --setup
 ```
+*   **API Key**: Enter your OpenAI or Qiniu Minimax API key.
+*   **Endpoint**: Set the API base URL (e.g., `https://api.qnaigc.com/v1`).
 
-Installation (with requirements)
-- Install from the repository root:
+### 3. Generate Workflows
+Interact directly with the AI in the TUI interface.
+*   **Free Chat**: Describe your requirements or ask about plugin capabilities.
+*   **Core Command `@G`**: Use the `@G` prefix to trigger workflow generation.
+    *   *Example*: `@G generate a workflow to analyze CSV data and plot a line chart`
+*   **Validate & Save**: 
+    *   The system performs real-time validation against `OriflowPrompts/SchemaRulePrompts.md`.
+    -   Generated workflows are automatically saved to the `WorkflowBase/` directory.
 
-```bash
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
+## Core Features
+- **Strict Schema Enforcement**: Validates node IDs, I/O links, and parameter integrity automatically.
+- **Sticky Scroll Lock**: The chat window stays locked to the bottom for the latest messages.
+- **Formatted Preview**: Real-time, pretty-printed JSON preview in the right panel.
+- **Provider Agnostic**: Fully compatible with OpenAI, Qiniu, Minimax, and other standard API protocols.
 
-Docker
-- Build image:
-
-```bash
-docker build -t oriflow-agent .
-```
-
-- Run container (exposes port 8000):
-
-```bash
-docker run --rm -p 8000:8000 \
-	-e OPENAI_API_KEY="<your-key>" \
-	oriflow-agent
-```
-
-- Notes:
-	- The image starts `uvicorn main:app` by default. Use environment variables (for example `OPENAI_API_KEY`) if your LLM plugins require them, or use the `/llm/save` API to set LLM credentials at runtime.
-	- For development, prefer `uvicorn main:app --reload` on the host for faster iteration.
-
-Key API endpoints
-- `/plugins/` — list available plugins
-- `/workflow/*` — create/alter/get/delete/list workflows
-- `/runtime/*` — run workflows and handle human inputs
-- `/llm/*` — get/save LLM runtime configuration
-- `/filebase/*` — list generated files
-
-Documentation
-- Node contexts: `Docs/nodes_contexts_v2.md`
-- Param config reference: `Docs/param_config_reference.md`
-- Server API: `Docs/Server_API.md`
-
-License & Contribution
-This is an internal prototype. Please open issues or PRs in the repository for changes.
+## Documentation Reference
+- Node Contexts: `Docs/nodes_contexts_v2.md`
+- Generation Rules: `OriflowPrompts/SchemaRulePrompts.md`
+- API Reference: `Docs/Server_API.md`

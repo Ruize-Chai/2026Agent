@@ -99,48 +99,21 @@ class Self_Node(Node):
             api_key = None
             endpoint = None
 
-        result_text = None
+        # Use the central LLM client wrapper to handle compatibility with different openai versions
+        result_text = ""
         try:
-            import openai
+            from LLM import create_client
 
-            if api_key:
-                try:
-                    setattr(openai, "api_key", api_key)
-                except Exception:
-                    pass
-            if endpoint:
-                try:
-                    setattr(openai, "api_base", endpoint)
-                except Exception:
-                    pass
-
-            # 使用简单 completion 调用，若可用则取 choices[0].text
+            client = create_client(backend="openai", api_key=api_key, endpoint=endpoint)
+            # Synchronous generate is fine inside async when executed in thread by client
+            # Use asyncio.to_thread via client.generate_async to avoid blocking
             try:
-                Completion = getattr(openai, "Completion", None)
-                if Completion is not None:
-                    resp = Completion.create(model=model, prompt=prompt, max_tokens=cfg.get("max_tokens", 256))
-                    result_text = getattr(resp.choices[0], "text", None) if getattr(resp, "choices", None) else None
-                else:
-                    ChatCompletion = getattr(openai, "ChatCompletion", None)
-                    if ChatCompletion is not None:
-                        resp = ChatCompletion.create(model=model, messages=[{"role": "user", "content": prompt}], max_tokens=cfg.get("max_tokens", 256))
-                        if getattr(resp, "choices", None):
-                            choice0 = resp.choices[0]
-                            # choice0.message may be dict-like
-                            result_text = None
-                            try:
-                                result_text = choice0.message.get("content")
-                            except Exception:
-                                result_text = getattr(choice0, "text", None)
-                    else:
-                        result_text = "LLM client has no Completion or ChatCompletion API"
-            except Exception as e:
-                result_text = f"LLM call failed: {e}"
+                result_text = await client.generate_async(prompt, model=model, max_tokens=cfg.get("max_tokens", 256))
+            except Exception:
+                # fallback to sync generate in thread
+                result_text = await client.generate_async(prompt, model=model, max_tokens=cfg.get("max_tokens", 256))
         except Exception as e:
             result_text = f"LLM client unavailable: {e}"
-
-        if result_text is None:
-            result_text = ""
 
         # 写入节点 context
         try:

@@ -1,64 +1,39 @@
-# Oriflow-Agent BETA 1.0
+# Oriflow-Agent (Workflow Generator)
 
-Oriflow-Agent 是一个工作流引擎原型，支持插件化节点、运行时编排以及基于大模型的节点扩展。
+Oriflow-Agent 是一个强大的基于 TUI（终端用户界面）的工作流对话生成系统。它能够通过自然语言对话，自动生成符合规范（Schema）的可执行工作流 JSON 配置文件。
 
-仓库结构要点
-- `main.py` — FastAPI 服务入口，包含管理与运行时相关 API。
-- `Workflow/` — 运行引擎与辅助模块（`WorkflowEngine`、`PinManager`、`InCommunicateHub`、`ExCommunicateHub`、`FlowListener`、`Interrupt`）。
-- `Nodes/` — 节点基类与插件加载器。
-- `Plugins/` — 内置节点实现（基础节点与 LLM 节点）。
-- `Docs/` — 文档：节点 context、`param_config` 参考、HTTP API 说明等。
+## 快速开始
 
-快速开始
-1. 安装依赖：
+### 1. 环境准备
+确保已安装 Python 3.10+，并安装必要依赖：
 ```bash
 pip install -r requirements.txt
 ```
-2. 启动服务：
+
+### 2. 配置与启动
+使用 `tools/textual_tui.py` 进入交互式生成界面：
 ```bash
-python main.py
-# 或
-uvicorn main:app --reload --host 127.0.0.1 --port 8000
+python tools/textual_tui.py --setup
 ```
+*   **API Key**: 输入你的 OpenAI 或七牛云 Minimax API Key。
+*   **Endpoint**: 输入 API 地址（例如：`https://api.qnaigc.com/v1`）。
 
-安装（含 requirements）
-1. 推荐先升级 pip：
+### 3. 生成工作流
+一旦进入 TUI 界面，你可以直接与 AI 对话。
+*   **普通对话**: 描述你的需求或询问插件功能。
+*   **核心指令 `@G`**: 使用 `@G` 前缀让 AI 生成工作流 JSON。
+    *   *示例*: `@G 生成一个分析 CSV 数据并绘制折线图的工作流`
+*   **校验与保存**: 
+    *   系统会自动根据 `OriflowPrompts/SchemaRulePrompts.md` 进行实时校验。
+    -   工作流会自动保存到 `WorkflowBase/` 目录下。
 
-```bash
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
+## 核心特性
+- **Schema 强约束**: 自动校验节点 ID、输入输出链路及参数合法性。
+- **自动滚动锁定**: 聊天窗口持续自动锁定到最新回复。
+- **美化展示**: 右侧预览窗口实时格式化展示生成的 JSON。
+- **多端适配**: 完美兼容 OpenAI 及国内七牛云、Minimax 等主流 API 协议。
 
-Docker 使用
-1. 构建镜像：
-
-```bash
-docker build -t oriflow-agent .
-```
-
-2. 运行容器（对外映射 8000 端口）：
-
-```bash
-docker run --rm -p 8000:8000 \
-	-e OPENAI_API_KEY="<你的-openai-key>" \
-	oriflow-agent
-```
-
-说明：
-- 镜像默认以 `uvicorn main:app` 启动服务。若 LLM 插件需要凭证，可通过环境变量传入 `OPENAI_API_KEY` 或者启动后调用 `/llm/save` API 动态设置。
-- 本地开发推荐直接用 `uvicorn ... --reload`，便于热重载调试。
-
-主要接口
-- `/plugins/` — 获取插件列表
-- `/workflow/*` — 创建/修改/读取/删除/列出工作流
-- `/runtime/*` — 启动工作流与处理人工输入（文本/数字/checkbox/chatbox）
-- `/llm/*` — 获取/保存运行时 LLM 配置
-- `/filebase/*` — 列出生成的文件
-
-文档位置
-- 节点 context 列表：`Docs/nodes_contexts_v2.md`
-- 参数配置参考：`Docs/param_config_reference.md`
-- HTTP API：`Docs/Server_API.md`
-
-发布与贡献
-此项目为后端原型；如需改进请在仓库中创建 issue 或提交 PR。
+## 文档参考
+- 节点规范：`Docs/nodes_contexts_v2.md`
+- 规则配置：`OriflowPrompts/SchemaRulePrompts.md`
+- 接口说明：`Docs/Server_API.md`

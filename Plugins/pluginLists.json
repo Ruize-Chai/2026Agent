@@ -17,7 +17,6 @@
 		"LLM_QA",
 		"LLM_Translate",
 		"LLM_CodeGeneration",
-		"LLM_Conversation",
-		"LLM_GenerateWorkflow"
+		"LLM_Conversation"
 	]
 }

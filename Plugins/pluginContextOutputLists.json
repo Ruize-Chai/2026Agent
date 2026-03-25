@@ -58,9 +58,5 @@
     {
         "node_type": "LLM_FileProduction",
         "contexts": ["file_id", "path"]
-    },
-    {
-        "node_type": "LLM_GenerateWorkflow",
-        "contexts": ["workflow_id", "path"]
     }
 ]

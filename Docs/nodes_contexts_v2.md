@@ -36,10 +36,7 @@
 
 如需新增节点类型或修改字段，请同步更新本文件以及相应插件模块头部的说明。
 
-- LLM_GenerateWorkflow
-  - Context Outputs: `workflow_id` (str) — 生成的 workflow 唯一 id（文件名，不含扩展名）。
-  - Context Outputs: `path` (str) — 文件系统路径，例：`WorkflowBase/{workflow_id}.json`。
-  - Exposed via `ex_hub.cache(node_id, {"workflow_id": workflow_id, "path": path})`。
+<!-- LLM_GenerateWorkflow 已移除：生成/存储工作流由工具链或前端交互处理 -->
 
 - LLM_FileProduction
   - Context Outputs: `file_id` (str) — 生成的文件唯一 id（文件名，不含扩展名）。

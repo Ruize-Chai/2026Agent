@@ -147,7 +147,7 @@ HUB可以解析外来PAYLOAD并转发给占有它的NODE.
 中断触发器,所有节点绑定到此.管理一个布尔值.
 
 # WORKFLOW
-存放在WorkflowBase文件夹中.这个文件夹里，你可以通过workflowlists.json获取workflow数据文件表格，也可以根据workflow_id.json找到独属于这个workflow的文件架子。`LLM_GenerateWorkflow`节点生成并可以存储workflow到特定文件.(由于大模型的文件生成模式性能更好，于是我们采用了这一类设计)
+存放在WorkflowBase文件夹中.这个文件夹里，你可以通过workflowlists.json获取workflow数据文件表格，也可以根据workflow_id.json找到独属于这个workflow的文件架子。工作流文件通常由工具链或前端生成并存储于此。
 
 workflow创建时完成各模块的绑定.
 workflow启动所有节点的serve(),再激活entry:0号节点,实现对`START`节点的启动.
@@ -221,11 +221,7 @@ param_config 设定好所用的model和模型生成参数.
 名字由param_config确定.
 更新filebaselists.json.
 
-## 12.LLM_GenerateWorkflow
-校验workflow.
-下文存储在WorkflowBase文件夹中
-名字由workflowid决定
-更新workflowlists.json.
+<!-- 原 `LLM_GenerateWorkflow` 节点说明已移除 -->
 
 # ABOUT OPENAI SDK API SKEY
 # 关于大模型OPENAI SDK:

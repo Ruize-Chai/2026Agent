@@ -31,9 +31,7 @@
     - `LLM_Translate`: `target_lang` (str) — 若提供则插件会填充默认 `prompt_template`。
     - `LLM_CodeGeneration`: `language` (str) — 指定目标编程语言，插件会填充默认 `prompt_template`。
 
-- **LLM_GenerateWorkflow**
-  - `prompt_template` (str, optional): 指定用于生成 workflow JSON 的模板（包含 `{context}` 占位符）。
-  - `model`, `max_tokens` 等可同 `LLM_Answer` 一致配置。
+<!-- LLM_GenerateWorkflow 已移除：相关生成功能由外部工具或 TUI 处理 -->
 
 - **LLM_FileProduction**
   - `prompt_template` (str, optional): 指定用于生成文件内容的模板。

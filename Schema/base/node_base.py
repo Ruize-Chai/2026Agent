@@ -1,5 +1,3 @@
-from Json_Utils.json_validate import is_valid_node_dict
-
 
 class BaseNode:
     """基础节点类，基于 Python dict 初始化并校验。
@@ -8,6 +6,9 @@ class BaseNode:
     """
 
     def __init__(self, data: dict):
+        # 延迟导入以避免与 Json_Utils.json_validate 的循环导入
+        from Json_Utils.json_validate import is_valid_node_dict
+        
         # 使用已有的 dict 校验器，会在失败时抛出对应错误
         is_valid_node_dict(data)
 
