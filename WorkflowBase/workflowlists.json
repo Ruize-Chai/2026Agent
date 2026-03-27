@@ -58,5 +58,21 @@
   {
     "id": "iris_analysis_generator",
     "filename": "iris_analysis_generator.json"
+  },
+  {
+    "id": "iris_dataset_analysis_workflow",
+    "filename": "iris_dataset_analysis_workflow.json"
+  },
+  {
+    "id": "grammar_analyzer",
+    "filename": "grammar_analyzer.json"
+  },
+  {
+    "id": "workflow_with_delay",
+    "filename": "workflow_with_delay.json"
+  },
+  {
+    "id": "essay_grammar_checker",
+    "filename": "essay_grammar_checker.json"
   }
 ]

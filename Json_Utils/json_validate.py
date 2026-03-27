@@ -1,4 +1,5 @@
 import json
+from collections import deque
 from typing import Any, Union
 
 from pydantic import ValidationError
@@ -30,6 +31,38 @@ from Logger import (
     NodeIDMustBeInteger,
     NodeTypeMustBeString,
 )
+
+
+def _validate_workflow_dag(nodes: list[dict]) -> None:
+    """基于 nodes[].outputs 做 DAG 校验；若存在环则抛出 WorkflowDictValidationError。"""
+    node_ids = {n["id"] for n in nodes}
+    adjacency = {node_id: set() for node_id in node_ids}
+    indegree = {node_id: 0 for node_id in node_ids}
+
+    for node in nodes:
+        src_id = node["id"]
+        for target_id in node.get("outputs", []):
+            if target_id is None:
+                continue
+            if target_id not in node_ids:
+                continue
+            if target_id not in adjacency[src_id]:
+                adjacency[src_id].add(target_id)
+                indegree[target_id] += 1
+
+    queue = deque([node_id for node_id, degree in indegree.items() if degree == 0])
+    visited_count = 0
+
+    while queue:
+        current = queue.popleft()
+        visited_count += 1
+        for nxt in adjacency[current]:
+            indegree[nxt] -= 1
+            if indegree[nxt] == 0:
+                queue.append(nxt)
+
+    if visited_count != len(node_ids):
+        raise WorkflowDictValidationError("Workflow graph must be a DAG (cycle detected in node outputs)")
 
 #安全转化dict
 def _ensure_dict(data: Union[str, dict, Any]) -> dict:
@@ -69,10 +102,14 @@ def is_valid_workflow_payload(data: Union[str, dict, Any]) -> bool:
     except ValueError as e:
         raise WorkflowPayloadValidationError(str(e))
     try:
-        WorkflowPayload(**d)
+        wf = WorkflowPayload(**d)
+        nodes = [n.dict() for n in wf.nodes]
+        _validate_workflow_dag(nodes)
         return True
     except ValidationError as ve:
         raise WorkflowPayloadValidationError(str(ve))
+    except WorkflowDictValidationError as we:
+        raise WorkflowPayloadValidationError(str(we))
     except Exception as e:
         raise WorkflowPayloadValidationError(str(e))
 
@@ -149,5 +186,7 @@ def is_valid_workflow_dict(d: Any) -> bool:
             })
         except NodeDictValidationError as nde:
             raise nde
+
+    _validate_workflow_dag(nodes)
     return True
 

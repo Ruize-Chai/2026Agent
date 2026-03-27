@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import Any, Dict
 from Server.utils import save_workflow, load_workflow, delete_workflow, read_workflow_lists
 from Schema.payload.workflow_payload import WorkflowPayload as SchemaWorkflowPayload
+from Json_Utils.json_validate import is_valid_workflow_dict
 import uuid
 
 router = APIRouter(prefix="/workflow", tags=["workflow"])
@@ -13,6 +14,10 @@ def create_workflow(payload: SchemaWorkflowPayload):
     wid = payload.workflow_id or str(uuid.uuid4())
     data = payload.dict()
     data["workflow_id"] = wid
+    try:
+        is_valid_workflow_dict(data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
     save_workflow(wid, data)
     return {"status": "ok", "workflow_id": wid}
 
@@ -21,7 +26,12 @@ def create_workflow(payload: SchemaWorkflowPayload):
 def alter_workflow(payload: SchemaWorkflowPayload):
     if not payload.workflow_id:
         raise HTTPException(status_code=400, detail="workflow_id required")
-    save_workflow(payload.workflow_id, payload.dict())
+    data = payload.dict()
+    try:
+        is_valid_workflow_dict(data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    save_workflow(payload.workflow_id, data)
     return {"status": "ok", "workflow_id": payload.workflow_id}
 
 
